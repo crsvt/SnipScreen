@@ -1,6 +1,3 @@
-let clickCount = 0;
-let clickTimeout;
-
 // Debounce utility to prevent rapid function calls
 const debounce = (func, wait) => {
   let timeout;
@@ -30,24 +27,6 @@ chrome.runtime.onSuspend.addListener(async () => {
     console.error('Cleanup on suspend failed:', error);
   }
 });
-
-// Handle single/double clicks on the extension action icon
-async function handleClick(tab) {
-  clickCount++;
-
-  if (clickCount === 1) {
-    // Start a timer to handle as single click if no second click occurs
-    clickTimeout = setTimeout(async () => {
-      await handleScreenshot(tab, true); // Single-click: Crop first mode
-      clickCount = 0; // Reset counter
-    }, 200); // 200ms window to detect double-click
-  } else if (clickCount === 2) {
-    // Double click detected
-    clearTimeout(clickTimeout); // Cancel single-click timer
-    await handleScreenshot(tab, false); // Double-click: Full editor mode
-    clickCount = 0; // Reset counter
-  }
-}
 
 // Debounced function to handle screenshot capture and editor opening
 const handleScreenshot = debounce(async (tab, cropOnly = false) => {
@@ -95,7 +74,9 @@ const handleScreenshot = debounce(async (tab, cropOnly = false) => {
 }, 200); // Debounce interval
 
 // Listener for the extension action click
-chrome.action.onClicked.addListener(handleClick);
+chrome.action.onClicked.addListener((tab) => {
+  handleScreenshot(tab, false);
+});
 
 // Helper to show notifications
 function showNotification(message, type = 'info') { // Default type to info

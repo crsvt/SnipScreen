@@ -4,18 +4,6 @@
  * @param {'crop' | 'annotate' | 'text' | 'arrow'} tool - The name of the tool to toggle.
  */
 export function toggleTool(tool) {
-  // Prevent activating other tools during initial crop mode
-  if (this.state.cropOnlyMode && tool !== 'crop') {
-    console.warn("Cannot activate other tools while in initial crop mode.");
-    return;
-  }
-  
-  // Prevent re-clicking crop tool during initial crop mode
-  if (this.state.cropOnlyMode && tool === 'crop') {
-    this.showToast("Drag on the image to select crop area.", false, 'info');
-    return;
-  }
-
   const toolElement = document.getElementById(`${tool}Tool`);
   if (!toolElement || toolElement.style.display === 'none') {
     console.warn(`Tool element for ${tool} not found or is hidden.`);
@@ -344,4 +332,3 @@ export async function tryDownload(url, filename, retries) {
     }
   }
 }
-
