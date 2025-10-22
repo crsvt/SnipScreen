@@ -52,64 +52,23 @@ export function cleanup() {
  * Checks the mode (cropOnly or full editor) from storage and configures the UI accordingly.
  */
 export async function checkMode() {
-  try {
-    const { cropOnlyMode } = await chrome.storage.local.get(['cropOnlyMode']);
-    this.state.cropOnlyMode = !!cropOnlyMode; // Ensure boolean
-
-    const cropTool = document.getElementById('cropTool');
-    const spinnerTool = document.getElementById('spinner');
-
-    if (this.state.cropOnlyMode) {
-      console.log("Entering Crop Only Mode UI setup.");
-      // Hide all tools initially except spinner (which is hidden by default)
-      document.querySelectorAll('.tool-item').forEach(tool => {
-        if(tool.id !== 'spinner') { 
-          tool.style.display = 'none'; 
-        }
-      });
-      // Explicitly show crop tool
-      if (cropTool) {
-        cropTool.style.display = 'flex';
-        this.setToolActive('crop', true);
-        cropTool.classList.add('active');
-        if (this.canvas) this.canvas.style.cursor = 'crosshair';
-      } else { 
-        console.warn("Crop tool element not found during cropOnlyMode setup."); 
-      }
-      if(spinnerTool) { 
-        spinnerTool.style.display = 'none'; 
-      }
-
-    } else {
-      console.log("Entering Full Editor Mode UI setup.");
-      // Show all tools except spinner
-      document.querySelectorAll('.tool-item').forEach(tool => {
-        if (tool.id !== 'spinner') { 
-          tool.style.display = 'flex'; 
-        } else { 
-          tool.style.display = 'none'; 
-        } // Explicitly hide spinner
-      });
-      if (cropTool) { 
-        cropTool.classList.remove('active'); 
-      } // Ensure crop not active
-      if (this.canvas) { 
-        this.canvas.style.cursor = 'default'; 
-      }
-    }
-  } catch (error) {
-    console.error("Failed to check mode:", error);
-    this.showToast(`Error setting up editor mode: ${error.message}`, false, 'error');
-    // Default to non-crop mode on error, show all tools except spinner
-    this.state.cropOnlyMode = false;
-    document.querySelectorAll('.tool-item').forEach(tool => {
-      if (tool.id !== 'spinner') { 
-        tool.style.display = 'flex'; 
-      } else { 
-        tool.style.display = 'none'; 
-      }
-    });
-    if (this.canvas) this.canvas.style.cursor = 'default';
+  this.state.cropOnlyMode = false;
+  
+  console.log("Entering Full Editor Mode UI setup.");
+  // Show all tools except spinner
+  document.querySelectorAll('.tool-item').forEach(tool => {
+    if (tool.id !== 'spinner') { 
+      tool.style.display = 'flex'; 
+    } else { 
+      tool.style.display = 'none'; 
+    } // Explicitly hide spinner
+  });
+  const cropTool = document.getElementById('cropTool');
+  if (cropTool) { 
+    cropTool.classList.remove('active'); 
+  } // Ensure crop not active
+  if (this.canvas) { 
+    this.canvas.style.cursor = 'default'; 
   }
 }
 
