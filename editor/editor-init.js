@@ -2,20 +2,11 @@
  * Performs initial cleanup when the editor is closing or unloading.
  */
 export function cleanup() {
-  try {
-    if (chrome && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.remove(['currentScreenshot', 'originalTab', 'cropOnlyMode'], () => {
-        if (chrome.runtime.lastError) {
-          console.warn('Error during cleanup storage removal:', chrome.runtime.lastError.message);
-        } else {
-          console.log('Temporary data cleared');
-        }
-      });
-    }
-  } catch (error) {
-    console.error('Cleanup failed:', error);
-  }
-  
+  // NOTE: storage is intentionally NOT cleared here — beforeunload also fires
+  // on page reload, and clearing would break reloading the editor tab. The
+  // data is overwritten on the next capture and cleared by the background
+  // service worker's onSuspend handler.
+
   // Nullify properties safely
   this.ctx = null;
   this.canvas = null;
@@ -103,26 +94,10 @@ export async function loadScreenshot() {
         this.offscreenCanvas.width = canvasWidth;
         this.offscreenCanvas.height = canvasHeight;
 
-        // Set canvas to fit within the available space while maintaining aspect ratio
+        // Fit the canvas to the available space while preserving aspect ratio
         const toolbarElement = document.querySelector('.toolbar');
         this.config.toolbarHeight = toolbarElement ? toolbarElement.offsetHeight : 64;
-        const containerElement = document.getElementById('editorContainer');
-        const containerRect = containerElement ? containerElement.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight - this.config.toolbarHeight };
-        
-        // Calculate available space
-        const availableWidth = containerRect.width - 48; // Account for padding
-        const availableHeight = containerRect.height - 48; // Account for padding
-        
-        // Calculate scale to fit within available space
-        const scaleX = availableWidth / canvasWidth;
-        const scaleY = availableHeight / canvasHeight;
-        const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
-        
-        // Set canvas display size
-        this.canvas.style.width = `${canvasWidth * scale}px`;
-        this.canvas.style.height = `${canvasHeight * scale}px`;
-        this.canvas.style.maxWidth = '100%';
-        this.canvas.style.maxHeight = '100%';
+        this.updateCanvasDisplaySize();
 
         // Enable high-quality image smoothing for better clarity
         this.offscreenCtx.imageSmoothingEnabled = true;
@@ -133,11 +108,7 @@ export async function loadScreenshot() {
         // Enable high-quality image smoothing for the main canvas as well
         this.ctx.imageSmoothingEnabled = true;
         this.ctx.imageSmoothingQuality = 'high';
-        
-        // Additional quality settings for crisp output
-        this.ctx.textRenderingOptimization = 'optimizeQuality';
-        this.offscreenCtx.textRenderingOptimization = 'optimizeQuality';
-        
+
         this.ctx.drawImage(this.offscreenCanvas, 0, 0);
 
         this.updateCanvasRect();
@@ -254,6 +225,23 @@ export function initializeTools() {
       console.warn(`Tool element with ID ${id} not found.`); 
     }
   }
+}
+
+/**
+ * Recomputes the canvas's on-screen (CSS) size so the current bitmap fits the
+ * container while preserving its aspect ratio. Must be called whenever the
+ * bitmap dimensions change (initial load, crop) or the window resizes.
+ */
+export function updateCanvasDisplaySize() {
+  if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) return;
+  const containerElement = document.getElementById('editorContainer');
+  const containerRect = containerElement ? containerElement.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight - this.config.toolbarHeight };
+  const availableWidth = containerRect.width - 48; // Account for padding
+  const availableHeight = containerRect.height - 48;
+  const scale = Math.min(availableWidth / this.canvas.width, availableHeight / this.canvas.height, 1); // Only scale down
+  this.canvas.style.width = `${this.canvas.width * scale}px`;
+  this.canvas.style.height = `${this.canvas.height * scale}px`;
+  this.updateCanvasRect();
 }
 
 /**

@@ -219,14 +219,6 @@ html, body {
   max-height: 100%;
   width: auto;
   height: auto;
-
-  /* High-quality image rendering */
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
-  image-rendering: -webkit-image-smoothing: high;
-  image-rendering: -moz-image-smoothing: high;
-  image-rendering: image-smoothing: high;
 }
 
 #editorCanvas:hover {

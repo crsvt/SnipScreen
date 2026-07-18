@@ -70,7 +70,7 @@ class ScreenshotEditor {
     // Initialize Editor
     try {
       this.boundCleanup = this.cleanup.bind(this);
-      this.boundUpdateCanvasRect = this.updateCanvasRect.bind(this);
+      this.boundUpdateCanvasDisplaySize = this.updateCanvasDisplaySize.bind(this);
 
       this.updateCanvasRect();
       this.checkMode();
@@ -78,7 +78,7 @@ class ScreenshotEditor {
       this.loadScreenshot();
       this.setupEventListeners();
 
-      window.addEventListener('resize', this.boundUpdateCanvasRect);
+      window.addEventListener('resize', this.boundUpdateCanvasDisplaySize);
       window.addEventListener('beforeunload', this.boundCleanup);
 
     } catch (error) {

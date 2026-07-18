@@ -21,7 +21,7 @@ export function toggleTool(tool) {
     
     // Animate tool deactivation
     toolElement.classList.remove('active');
-    this.animateToolActivation(tool, false);
+    this.animateToolActivation(`${tool}Tool`, false);
     
     // Reset cursor only if NO other drawing tool remains active
     const anyDrawingToolActive = drawingTools.some(t => this.isToolActive(t));
@@ -48,7 +48,7 @@ export function toggleTool(tool) {
         const otherElement = document.getElementById(`${otherTool}Tool`);
         if (otherElement) {
           otherElement.classList.remove('active');
-          this.animateToolActivation(otherTool, false);
+          this.animateToolActivation(`${otherTool}Tool`, false);
         }
       }
     });
@@ -58,7 +58,7 @@ export function toggleTool(tool) {
     toolElement.classList.add('active');
     
     // Animate tool activation
-    this.animateToolActivation(tool, true);
+    this.animateToolActivation(`${tool}Tool`, true);
 
     // Set cursor and provide feedback
     if (tool === 'crop' || tool === 'annotate') {
@@ -171,12 +171,16 @@ export async function completeCrop() {
 
     console.log("Adjusted annotation elements for crop.");
 
-    // Update canvas rectangle cache
-    this.updateCanvasRect();
+    // Refit the display size to the new bitmap and update the rect cache
+    this.updateCanvasDisplaySize();
     this.redrawCanvas();
     this.showToast("Crop completed successfully!", false, 'success');
-    this.animateToolActivation('crop', false);
     this.setToolActive('crop', false);
+    const cropToolElement = document.getElementById('cropTool');
+    if (cropToolElement) {
+      cropToolElement.classList.remove('active');
+    }
+    this.animateToolActivation('cropTool', false);
 
   } catch (error) {
     console.error("Error during crop finalization:", error);
@@ -285,7 +289,7 @@ export async function saveImage() {
   try {
     const finalCanvas = this.prepareFinalCanvas();
     const dataUrl = finalCanvas.toDataURL('image/png', 1.0);
-    const { saveLocation } = await chrome.storage.sync.get({ saveLocation: 'SnipScreen_Captures' });
+    const { saveLocation } = await chrome.storage.sync.get({ saveLocation: 'SnipScreen' });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').replace('Z','');
     const sanitizedSaveLocation = saveLocation.replace(/^\/+|\/+$/g, '').replace(/[^a-zA-Z0-9_\-\/]/g, '_');
     const filename = `${sanitizedSaveLocation}/SnipScreen-${timestamp}.png`;

@@ -61,25 +61,6 @@ export function showToast(message, persist = false, type = 'info') {
       this.ui.toastElement.style.borderColor = 'rgba(255, 255, 255, 0.1)';
   }
 
-  // Add icon based on type
-  const iconMap = {
-    'error': 'fas fa-exclamation-circle',
-    'success': 'fas fa-check-circle',
-    'info': 'fas fa-info-circle'
-  };
-  
-  // Remove existing icon if any
-  const existingIcon = this.ui.toastElement.querySelector('i');
-  if (existingIcon) {
-    existingIcon.remove();
-  }
-  
-  // Add new icon
-  const icon = document.createElement('i');
-  icon.className = iconMap[type] || iconMap.info;
-  icon.style.marginRight = '8px';
-  this.ui.toastElement.insertBefore(icon, this.ui.toastElement.firstChild);
-
   // Use requestAnimationFrame to ensure the class addition triggers transition
   requestAnimationFrame(() => {
     this.ui.toastElement.classList.add('show');

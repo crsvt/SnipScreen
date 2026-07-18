@@ -40,8 +40,7 @@ const handleScreenshot = debounce(async (tab, cropOnly = false) => {
 
     // Capture the visible part of the tab with high quality settings
     const screenshotUrl = await chrome.tabs.captureVisibleTab(null, {
-      format: 'png', // Use PNG for lossless quality
-      quality: 100   // Maximum quality (though PNG is already lossless)
+      format: 'png' // Lossless; the quality option only applies to JPEG
     });
 
     if (!screenshotUrl) throw new Error('Empty screenshot captured (check permissions or page content)');
@@ -50,17 +49,18 @@ const handleScreenshot = debounce(async (tab, cropOnly = false) => {
 
     // TODO: Consider implementing logic to find/reuse an existing editor tab
 
-    // Create a new tab for the editor
-    const newTab = await chrome.tabs.create({
-        url: editorUrl,
-        active: true
-    });
-
-    // Store necessary data for the editor page in local storage
+    // Store the data for the editor page BEFORE opening it, so the editor
+    // never loads ahead of the screenshot being available
     await chrome.storage.local.set({
       currentScreenshot: screenshotUrl, // The screenshot data URL
       originalTab: tab.id,           // ID of the tab where capture happened
       cropOnlyMode: cropOnly         // Flag for single-click vs double-click mode
+    });
+
+    // Create a new tab for the editor
+    const newTab = await chrome.tabs.create({
+        url: editorUrl,
+        active: true
     });
 
     showNotification('Screenshot captured successfully', 'success');
