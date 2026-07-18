@@ -28,6 +28,19 @@
         <path d="M4 12H8V14H4V12Z" fill="white" opacity="0.4"/>
       </symbol>
       
+      <!-- Arrow Icon -->
+      <symbol id="arrow-icon" viewBox="0 0 16 16">
+        <path d="M3 13L11.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M6.5 4H12V9.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+
+      <!-- Text Icon -->
+      <symbol id="text-icon" viewBox="0 0 16 16">
+        <path d="M3 4V2.5H13V4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 2.5V13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M5.5 13.5H10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </symbol>
+
       <!-- Copy to Clipboard Icon -->
       <symbol id="copy-icon" viewBox="0 0 16 16">
         <rect x="2" y="2" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -61,6 +74,16 @@
       <button class="tool-item" id="annotateTool" aria-label="Blackout area" title="Draw black rectangles to hide information" type="button">
         <svg width="16" height="16">
           <use href="#annotate-icon"/>
+        </svg>
+      </button>
+      <button class="tool-item" id="arrowTool" aria-label="Draw arrow" title="Drag to draw an arrow; drag its endpoints to resize" type="button">
+        <svg width="16" height="16">
+          <use href="#arrow-icon"/>
+        </svg>
+      </button>
+      <button class="tool-item" id="textTool" aria-label="Add text" title="Click anywhere to type text; drag its corner to resize" type="button">
+        <svg width="16" height="16">
+          <use href="#text-icon"/>
         </svg>
       </button>
       <button class="tool-item" id="shareTool" aria-label="Copy to Clipboard" title="Copy the edited image to the clipboard" type="button">

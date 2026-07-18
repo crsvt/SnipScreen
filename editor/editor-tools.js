@@ -11,8 +11,15 @@ export function toggleTool(tool) {
   }
 
   // Define mutually exclusive drawing/interaction tools
-  const drawingTools = ['crop', 'annotate'];
+  const drawingTools = ['crop', 'annotate', 'arrow', 'text'];
   const otherDrawingTools = drawingTools.filter(t => t !== tool);
+
+  // Commit any open text input and clear the selection when switching tools
+  if (this.activeTextInput) this.commitTextInput();
+  if (this.state.selected) {
+    this.state.selected = null;
+    this.redrawCanvas();
+  }
 
   // If the clicked tool is already active, deactivate it.
   if (this.isToolActive(tool)) {
@@ -61,13 +68,19 @@ export function toggleTool(tool) {
     this.animateToolActivation(`${tool}Tool`, true);
 
     // Set cursor and provide feedback
-    if (tool === 'crop' || tool === 'annotate') {
+    if (drawingTools.includes(tool)) {
       if (this.canvas) {
-        this.canvas.style.cursor = 'crosshair';
+        this.canvas.style.cursor = tool === 'text' ? 'text' : 'crosshair';
         // Add subtle canvas feedback
         this.canvas.style.transform = 'translateY(-1px) scale(1.002)';
       }
-      this.showToast(tool === 'crop' ? "Drag to select crop area." : "Click and drag to draw rectangles.", false, 'info');
+      const hints = {
+        crop: "Drag to select crop area.",
+        annotate: "Click and drag to draw rectangles.",
+        arrow: "Drag to draw a red arrow.",
+        text: "Click anywhere on the image to type red text."
+      };
+      this.showToast(hints[tool], false, 'info');
     }
   }
 }
@@ -81,92 +94,72 @@ export function toggleTool(tool) {
  */
 export async function completeCrop() {
   // Ensure prerequisites are met
-  if (!this.drawingState.cropStart || !this.drawingState.cropEnd || !this.isToolActive('crop') || !this.canvasState.originalImage || !this.offscreenCanvas) {
+  if (!this.drawingState.cropStart || !this.drawingState.cropEnd || !this.isToolActive('crop') || !this.offscreenCanvas) {
     console.warn("completeCrop prerequisites not met.");
     this.resetCropState();
     return;
   }
 
-  // Store dimensions before cropping
-  const currentDisplayWidth = this.offscreenCanvas.width;
-  const currentDisplayHeight = this.offscreenCanvas.height;
-  if (currentDisplayWidth === 0 || currentDisplayHeight === 0) {
+  // The canvas bitmap and offscreen canvas share the same resolution, so the
+  // selection is already in source coordinates — crop 1:1 from the offscreen
+  // canvas (this also keeps consecutive crops correct).
+  const currentWidth = this.offscreenCanvas.width;
+  const currentHeight = this.offscreenCanvas.height;
+  if (currentWidth === 0 || currentHeight === 0) {
     this.showToast("Error: Invalid canvas dimensions before crop.", false, 'error');
     this.resetCropState();
     return;
   }
 
-  // Calculate crop rectangle relative to display canvas
-  const displayStartX = Math.min(this.drawingState.cropStart.x, this.drawingState.cropEnd.x);
-  const displayStartY = Math.min(this.drawingState.cropStart.y, this.drawingState.cropEnd.y);
-  const displayCropWidth = Math.max(1, Math.round(Math.abs(this.drawingState.cropEnd.x - this.drawingState.cropStart.x)));
-  const displayCropHeight = Math.max(1, Math.round(Math.abs(this.drawingState.cropEnd.y - this.drawingState.cropStart.y)));
+  const startX = Math.min(this.drawingState.cropStart.x, this.drawingState.cropEnd.x);
+  const startY = Math.min(this.drawingState.cropStart.y, this.drawingState.cropEnd.y);
+  const cropWidth = Math.abs(this.drawingState.cropEnd.x - this.drawingState.cropStart.x);
+  const cropHeight = Math.abs(this.drawingState.cropEnd.y - this.drawingState.cropStart.y);
 
-  // Clamp selection to display canvas bounds
-  const clampedStartX = Math.max(0, Math.min(displayStartX, currentDisplayWidth));
-  const clampedStartY = Math.max(0, Math.min(displayStartY, currentDisplayHeight));
-  const clampedWidth = Math.max(1, Math.min(displayCropWidth, currentDisplayWidth - clampedStartX));
-  const clampedHeight = Math.max(1, Math.min(displayCropHeight, currentDisplayHeight - clampedStartY));
+  // Clamp selection to canvas bounds
+  const sx = Math.max(0, Math.min(Math.round(startX), currentWidth - 1));
+  const sy = Math.max(0, Math.min(Math.round(startY), currentHeight - 1));
+  const sw = Math.max(1, Math.min(Math.round(cropWidth), currentWidth - sx));
+  const sh = Math.max(1, Math.min(Math.round(cropHeight), currentHeight - sy));
 
-  console.log(`Crop selection on display canvas: x=${clampedStartX}, y=${clampedStartY}, w=${clampedWidth}, h=${clampedHeight}`);
+  console.log(`Cropping canvas region: x=${sx}, y=${sy}, w=${sw}, h=${sh}`);
 
-  if (clampedWidth <= 1 || clampedHeight <= 1) {
+  if (sw <= 1 || sh <= 1) {
     this.showToast("Crop area is too small.", false, 'error');
     this.resetCropState();
     return;
   }
 
   try {
-    // Calculate scaling factors
-    const scaleX = this.canvasState.originalImage.naturalWidth / currentDisplayWidth;
-    const scaleY = this.canvasState.originalImage.naturalHeight / currentDisplayHeight;
+    // Copy the selected region out before resizing the offscreen canvas
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = sw;
+    tempCanvas.height = sh;
+    tempCanvas.getContext('2d').drawImage(this.offscreenCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
 
-    // Calculate and clamp source rectangle on original image
-    const sourceX = Math.round(clampedStartX * scaleX);
-    const sourceY = Math.round(clampedStartY * scaleY);
-    const sourceWidth = Math.round(clampedWidth * scaleX);
-    const sourceHeight = Math.round(clampedHeight * scaleY);
-    const clampedSourceX = Math.max(0, Math.min(sourceX, this.canvasState.originalImage.naturalWidth));
-    const clampedSourceY = Math.max(0, Math.min(sourceY, this.canvasState.originalImage.naturalHeight));
-    const clampedSourceWidth = Math.max(1, Math.min(sourceWidth, this.canvasState.originalImage.naturalWidth - clampedSourceX));
-    const clampedSourceHeight = Math.max(1, Math.min(sourceHeight, this.canvasState.originalImage.naturalHeight - clampedSourceY));
-    console.log(`Cropping from original image: x=${clampedSourceX}, y=${clampedSourceY}, w=${clampedSourceWidth}, h=${clampedSourceHeight}`);
+    // Resize editor canvases and draw the cropped region back
+    this.canvas.width = sw;
+    this.canvas.height = sh;
+    this.offscreenCanvas.width = sw;
+    this.offscreenCanvas.height = sh;
+    this.offscreenCtx.clearRect(0, 0, sw, sh);
+    this.offscreenCtx.drawImage(tempCanvas, 0, 0);
+    const newCanvasWidth = sw;
+    const newCanvasHeight = sh;
 
-    // Resize editor canvases
-    const newCanvasWidth = clampedSourceWidth;
-    const newCanvasHeight = clampedSourceHeight;
-    this.canvas.width = newCanvasWidth;
-    this.canvas.height = newCanvasHeight;
-    this.offscreenCanvas.width = newCanvasWidth;
-    this.offscreenCanvas.height = newCanvasHeight;
-
-    // Draw cropped high-res section to offscreen canvas
-    this.offscreenCtx.imageSmoothingEnabled = false;
-    this.offscreenCtx.clearRect(0, 0, newCanvasWidth, newCanvasHeight);
-    this.offscreenCtx.drawImage(
-      this.canvasState.originalImage,
-      clampedSourceX, clampedSourceY, clampedSourceWidth, clampedSourceHeight,
-      0, 0, newCanvasWidth, newCanvasHeight
-    );
-    console.log("Drew high-res cropped section to offscreen canvas.");
-
-    // Adjust annotation elements (rectangles)
+    // Shift all annotation elements by the crop offset; drop ones now outside
+    this.state.selected = null;
     this.elements.annotationElements = this.elements.annotationElements
+      .filter(Boolean)
       .map(element => {
-        const originalElementX = element.x * scaleX;
-        const originalElementY = element.y * scaleY;
-        const originalElementWidth = element.width * scaleX;
-        const originalElementHeight = element.height * scaleY;
-        const newX = originalElementX - clampedSourceX;
-        const newY = originalElementY - clampedSourceY;
-        const newWidth = originalElementWidth;
-        const newHeight = originalElementHeight;
-        return { ...element, x: Math.round(newX), y: Math.round(newY), width: Math.round(newWidth), height: Math.round(newHeight) };
+        if (element.type === 'arrow') {
+          return { ...element, x1: element.x1 - sx, y1: element.y1 - sy, x2: element.x2 - sx, y2: element.y2 - sy };
+        }
+        return { ...element, x: element.x - sx, y: element.y - sy };
       })
       .filter(element => {
-        const elementRight = element.x + element.width;
-        const elementBottom = element.y + element.height;
-        return elementRight > 0 && elementBottom > 0 && element.x < newCanvasWidth && element.y < newCanvasHeight;
+        const b = this.getElementBounds(element);
+        return b.x + b.width > 0 && b.y + b.height > 0 && b.x < newCanvasWidth && b.y < newCanvasHeight;
       });
 
     console.log("Adjusted annotation elements for crop.");

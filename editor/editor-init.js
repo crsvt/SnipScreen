@@ -190,6 +190,8 @@ export function initializeTools() {
   const tools = {
     'cropTool': 'crop',
     'annotateTool': 'annotate', // Blackout
+    'arrowTool': 'arrow',
+    'textTool': 'text',
     'shareTool': this.copyToClipboard,
     'saveTool': this.saveImage
   };
@@ -203,12 +205,18 @@ export function initializeTools() {
           if (typeof action === 'string') { // Tool toggle
             this.toggleTool(action);
           } else if (typeof action === 'function') { // Action like save/copy
-            // Deselect any active drawing tool before action
-            ['crop', 'annotate'].forEach(toolName => {
-              if (this.isToolActive(toolName)) { 
-                this.toggleTool(toolName); 
+            // Commit pending text and deselect tools/elements before action,
+            // so the visible canvas matches what gets exported
+            if (this.activeTextInput) this.commitTextInput();
+            ['crop', 'annotate', 'arrow', 'text'].forEach(toolName => {
+              if (this.isToolActive(toolName)) {
+                this.toggleTool(toolName);
               }
             });
+            if (this.state.selected) {
+              this.state.selected = null;
+              this.redrawCanvas();
+            }
             await action.call(this);
           }
         } catch (error) { 

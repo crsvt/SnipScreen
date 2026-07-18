@@ -86,6 +86,85 @@ export function showToast(message, persist = false, type = 'info') {
 }
 
 /**
+ * Opens an inline text input over the canvas at the given canvas position.
+ * Committed via Enter, blur, or clicking elsewhere; cancelled via Escape.
+ * @param {{x: number, y: number}} pos - Position in canvas (bitmap) coordinates.
+ */
+export function openTextInput(pos) {
+  if (this.activeTextInput) this.commitTextInput();
+
+  this.updateCanvasRect();
+  const rect = this.ui.canvasRect;
+  const scale = rect && rect.width > 0 ? rect.width / this.canvas.width : 1;
+  const fontSize = this.defaultFontSize();
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'canvas-text-input';
+  input.setAttribute('aria-label', 'Annotation text');
+  input.placeholder = 'Type text…';
+  input.style.left = `${rect.left + pos.x * scale}px`;
+  input.style.top = `${rect.top + pos.y * scale}px`;
+  input.style.fontSize = `${Math.max(12, fontSize * scale)}px`;
+  document.body.appendChild(input);
+
+  this.activeTextInput = { input, pos, fontSize };
+
+  input.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Enter') this.commitTextInput();
+    else if (e.key === 'Escape') this.cancelTextInput();
+  });
+  input.addEventListener('blur', () => {
+    // Let a same-tick commit/cancel win over the blur
+    setTimeout(() => { if (this.activeTextInput && this.activeTextInput.input === input) this.commitTextInput(); }, 0);
+  });
+  // Focus immediately; the canvas mousedown is default-prevented so nothing
+  // steals it back. The rAF is a fallback for browsers that ignore the
+  // synchronous focus during event dispatch.
+  input.focus({ preventScroll: true });
+  requestAnimationFrame(() => {
+    if (document.activeElement !== input) input.focus({ preventScroll: true });
+  });
+}
+
+/**
+ * Commits the open text input as a text element (if non-empty) and removes it.
+ */
+export function commitTextInput() {
+  if (!this.activeTextInput) return;
+  const { input, pos, fontSize } = this.activeTextInput;
+  const text = input.value.trim();
+  this.activeTextInput = null;
+  input.remove();
+
+  if (text) {
+    const newText = {
+      type: 'text',
+      id: `text-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      x: pos.x, y: pos.y,
+      text,
+      fontSize,
+      color: '#FF3B30'
+    };
+    this.elements.annotationElements.push(newText);
+    this.showToast('Text added', false, 'success');
+  }
+  this.redrawCanvas();
+}
+
+/**
+ * Discards the open text input without adding an element.
+ */
+export function cancelTextInput() {
+  if (!this.activeTextInput) return;
+  const { input } = this.activeTextInput;
+  this.activeTextInput = null;
+  input.remove();
+  this.redrawCanvas();
+}
+
+/**
  * Adds smooth tool activation/deactivation animations.
  * @param {string} toolId - The ID of the tool to animate.
  * @param {boolean} isActive - Whether the tool is being activated or deactivated.

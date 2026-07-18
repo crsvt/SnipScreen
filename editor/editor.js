@@ -22,15 +22,21 @@ class ScreenshotEditor {
     this.state = {
       activeTools: new Set(),
       isDrawing: false,
-      cropOnlyMode: false
+      cropOnlyMode: false,
+      selected: null,      // Currently selected element (arrow/text/rect)
+      dragging: null       // {part, startPos, original} while moving/resizing a selection
     };
 
     // Drawing state
     this.drawingState = {
       cropStart: null,
       cropEnd: null,
-      annotateStart: null
+      annotateStart: null,
+      arrowStart: null
     };
+
+    // Open inline text input overlay, if any
+    this.activeTextInput = null;
 
     // Canvas state management
     this.canvasState = {
@@ -109,14 +115,15 @@ class ScreenshotEditor {
     // 1. Draw base image
     ctx.drawImage(this.offscreenCanvas, 0, 0);
 
-    // 2. Draw Annotations (Blackout Rects)
+    // 2. Draw annotations (blackout rects, arrows, text)
     this.elements.annotationElements.forEach(element => {
-      if (!element) return;
-      if (element.type === 'rect') {
-        ctx.fillStyle = element.color;
-        ctx.fillRect(element.x, element.y, element.width, element.height);
-      }
+      this.renderElement(ctx, element);
     });
+
+    // 3. Draw selection handles (visible canvas only, never exported)
+    if (this.state.selected) {
+      this.drawSelectionOverlay(ctx, this.state.selected);
+    }
   }
 
   // Helper methods for state management
@@ -136,7 +143,8 @@ class ScreenshotEditor {
     this.drawingState = {
       cropStart: null,
       cropEnd: null,
-      annotateStart: null
+      annotateStart: null,
+      arrowStart: null
     };
     this.state.isDrawing = false;
   }
