@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "SnipScreen",
-  "version": "1.0",
-  "description": "A Chrome Extension for capturing, cropping, annotating, and sharing screenshots",
+  "version": "1.1",
+  "description": "Capture, crop, black out, and annotate screenshots with red arrows and text, then copy or save them",
   "permissions": [
     "activeTab",
     "downloads",

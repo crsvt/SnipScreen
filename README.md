@@ -1,6 +1,6 @@
 # SnipScreen - A Powerful Screenshot Tool
 
-SnipScreen is a lightweight and privacy-focused Chrome extension for capturing, editing, and sharing screenshots directly in your browser. It provides a clean, modern editor with essential tools to help you create the perfect capture.'
+SnipScreen is a lightweight and privacy-focused Chrome extension for capturing, editing, and sharing screenshots directly in your browser. It provides a clean, modern editor with essential tools to help you create the perfect capture.
 
 ---
 
@@ -9,8 +9,12 @@ SnipScreen is a lightweight and privacy-focused Chrome extension for capturing, 
 *   **One-Click Capture:** Instantly capture the visible area of your current browser tab.
 *   **High-Quality Output:** Screenshots are captured and saved as high-resolution PNG files to ensure maximum clarity.
 *   **Full-Featured Editor:** A dedicated editor tab opens with your screenshot, ready for manipulation.
-*   **Crop Tool:** Easily select and crop your image to the exact dimensions you need. The crop is non-destructive until finalized, preserving the original quality.
-*   **Annotate (Blackout) Tool:** Quickly redact sensitive information by drawing black rectangles over parts of the image.
+*   **Crop Tool:** Easily select and crop your image to the exact dimensions you need. Cropping works repeatedly and keeps every annotation aligned.
+*   **Blackout Tool:** Quickly redact sensitive information by drawing black rectangles over parts of the image. Redactions are permanent — they can't be moved afterwards.
+*   **Arrow Tool:** Drag to draw a red arrow. Click an existing arrow to select it, then drag its endpoints to resize or its body to move it.
+*   **Text Tool:** Click anywhere on the image and type to add red text. Click existing text to select it, then drag its corner handle to resize or its body to move it.
+*   **Readable Anywhere:** Arrows and text carry a hairline white outline, so they stay visible on any background color — even red on red.
+*   **Element Editing:** Press `Delete`/`Backspace` to remove a selected arrow or text, `Escape` (or click outside the canvas) to deselect.
 *   **Copy to Clipboard:** Copy your final edited image directly to the clipboard with a single click, ready to be pasted anywhere.
 *   **Save to Disk:** Download the final image to your computer. The save location can be configured for easy organization.
 *   **Modern & Responsive UI:** The editor features a clean, intuitive interface that works across different screen sizes and supports your system's dark mode preference.
@@ -58,7 +62,11 @@ That's it! The extension is now installed and ready to use.
 ## How to Use
 
 1.  Navigate to the web page you want to capture.
-2.  Click the **SnipScreen icon** in your Chrome toolbar.
+2.  Click the **SnipScreen icon** (green scissors badge) in your Chrome toolbar.
 3.  A new tab will open with the screenshot loaded in the editor.
-4.  Use the toolbar tools (Crop, Annotate) to edit your image.
+4.  Use the toolbar tools to edit your image:
+    *   **Crop** — drag to select the area to keep.
+    *   **Blackout** — drag to draw black redaction rectangles.
+    *   **Arrow** — drag to draw a red arrow; click one to move or resize it.
+    *   **Text** — click to type red text; click it later to move or resize it.
 5.  Click the **Copy** icon to copy it to your clipboard or the **Save** icon to download it.

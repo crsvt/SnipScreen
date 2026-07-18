@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- SnipScreen logo master. PNGs are rendered from this design:
+       blue badge, white scissors cutting a dashed line, red pivot. -->
+  <defs>
+    <linearGradient id="badge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3DD56D"/>
+      <stop offset="1" stop-color="#169B46"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#badge)"/>
+  <!-- dashed cut line -->
+  <g stroke="#FFFFFF" stroke-width="7" stroke-linecap="round">
+    <line x1="64" y1="16" x2="64" y2="23"/>
+    <line x1="64" y1="30" x2="64" y2="37"/>
+    <line x1="64" y1="44" x2="64" y2="51"/>
+  </g>
+  <!-- scissor blades crossing at the pivot -->
+  <g stroke="#FFFFFF" stroke-width="11" stroke-linecap="round">
+    <line x1="46" y1="26" x2="76.8" y2="83.3"/>
+    <line x1="82" y1="26" x2="51.2" y2="83.3"/>
+  </g>
+  <!-- handle rings -->
+  <g stroke="#FFFFFF" stroke-width="9" fill="none">
+    <circle cx="46" cy="93" r="13"/>
+    <circle cx="82" cy="93" r="13"/>
+  </g>
+  <!-- red pivot dot -->
+  <circle cx="64" cy="59" r="12" fill="#FFFFFF"/>
+  <circle cx="64" cy="59" r="8" fill="#FF3B30"/>
+</svg>
